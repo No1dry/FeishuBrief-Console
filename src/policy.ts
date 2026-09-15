@@ -1,6 +1,8 @@
 import { z } from "zod";
 import type { Article, ReportRecord, Source } from "./types";
 
+z.config({ jitless: true });
+
 const keyword = z.string().trim().min(2).max(100);
 const topicSchema = z
   .object({
