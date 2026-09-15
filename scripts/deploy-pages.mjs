@@ -118,11 +118,18 @@ else
     sha: commit.sha,
   });
 const pages = await api("pages", "GET", undefined, true);
-if (!pages)
-  await api("pages", "POST", {
-    source: { branch: "gh-pages", path: "/" },
-    build_type: "legacy",
-  });
+if (!pages) {
+  try {
+    await api("pages", "POST", {
+      source: { branch: "gh-pages", path: "/" },
+      build_type: "legacy",
+    });
+  } catch (error) {
+    // GitHub may provision Pages as soon as the gh-pages branch appears.
+    const configured = await api("pages", "GET", undefined, true);
+    if (configured?.source?.branch !== 'gh-pages' || configured?.source?.path !== '/') throw error;
+  }
+}
 else if (pages.source?.branch !== "gh-pages" || pages.source?.path !== "/")
   throw new Error("Unexpected Pages source; not overwriting it.");
 console.log(
