@@ -1,0 +1,12 @@
+{
+  "verifiedAt": "2026-09-15",
+  "critique": { "philosophy": 4, "hierarchy": 4, "execution": 4, "specificity": 5, "restraint": 5, "variety": 4 },
+  "viewports": [320, 375, 414, 768, 1024, 1440],
+  "pagesPerViewport": 10,
+  "browser": "Chromium / Google Chrome",
+  "checks": ["configuration boundaries", "arxiv deduplication", "draft persistence", "undo and redo", "version recovery", "source controls", "message and web config isolation", "new topic and keywords", "search", "invalid import", "fetch failure recovery", "multi-tab conflicts", "numeric editing", "architecture image", "mobile navigation", "visible text WCAG contrast"],
+  "adaptations": "V3 application workbench, no marketing hero. Cobalt light surfaces and operational side rail; bilingual IBM Plex Sans / Noto Sans SC typography. Original report data is retained, absent operational metrics remain unknown.",
+  "productionConnected": true,
+  "backendConnection": "GitHub REST API; memory-only token; fixed configuration path and guarded workflow inputs",
+  "browserChecks": 25
+}

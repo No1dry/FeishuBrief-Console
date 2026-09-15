@@ -1,0 +1,68 @@
+/* Hallmark · macrostructure: Workbench · tone: utilitarian · anchor hue: cobalt
+ * theme: Cobalt, Chinese operational adaptation · nav: N3 · footer: Ft2
+ * audience: research owner · use: edit strategy and inspect report quality
+ */
+:root {
+  --color-paper: oklch(98.3% 0.003 250);
+  --color-surface: oklch(99.6% 0.001 250);
+  --color-panel: oklch(97% 0.004 250);
+  --color-hover: oklch(95.4% 0.006 250);
+  --color-ink: oklch(25% 0.012 250);
+  --color-ink-2: oklch(39% 0.009 250);
+  --color-muted: oklch(51% 0.012 250);
+  --color-faint: oklch(52% 0.009 250);
+  --color-rule: oklch(90% 0.007 250);
+  --color-rule-strong: oklch(83% 0.009 250);
+  --color-accent: oklch(52% 0.2 258);
+  --color-accent-ink: oklch(99.6% 0.001 250);
+  --color-accent-soft: oklch(95.2% 0.027 258);
+  --color-focus: oklch(24% 0.012 250);
+  --color-green: oklch(43% 0.095 162);
+  --color-green-soft: oklch(94% 0.023 162);
+  --color-amber: oklch(47% 0.105 75);
+  --color-amber-soft: oklch(96.5% 0.027 87);
+  --color-red: oklch(49% 0.165 25);
+  --color-red-soft: oklch(96% 0.018 25);
+  --color-rose: oklch(48% 0.115 5);
+  --color-rose-soft: oklch(95% 0.018 5);
+  --color-rail: oklch(24% 0.009 155);
+  --color-rail-hover: oklch(29% 0.009 155);
+  --color-rail-active: oklch(33% 0.01 155);
+  --color-rail-text: oklch(97% 0.003 155);
+  --color-rail-muted: oklch(76% 0.009 155);
+  --color-rail-subtle: oklch(70% 0.007 155);
+  --color-rail-rule: oklch(35% 0.008 155);
+  --color-chart-tech: oklch(68% 0.09 170);
+  --color-chart-finance: oklch(77% 0.027 240);
+  --color-chart-politics: oklch(85% 0.05 85);
+  --color-backdrop: oklch(20% 0.006 250 / 0.45);
+  --color-shadow: oklch(20% 0.006 250 / 0.13);
+  --color-clear: oklch(100% 0 0 / 0);
+  --font-display: "IBM Plex Sans", "Noto Sans SC Variable", sans-serif;
+  --font-body: "IBM Plex Sans", "Noto Sans SC Variable", sans-serif;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-2xl: 32px;
+  --space-3xl: 40px;
+  --space-4xl: 48px;
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 13px;
+  --text-lg: 14px;
+  --text-xl: 16px;
+  --text-heading: 24px;
+  --text-display: 34px;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-short: 120ms;
+  --dur-medium: 180ms;
+  --dur-modal: 250ms;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --rule-width: 1px;
+}
