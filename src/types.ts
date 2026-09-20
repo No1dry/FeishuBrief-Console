@@ -45,6 +45,15 @@ export interface DailyReport {
   editor_note?: string;
   keywords?: string[];
   trading?: { market_overview?: string };
+  quality_review?: {
+    status: "passed" | "failed";
+    reviewer: string;
+    score: number;
+    blockingIssues: string[];
+    suggestions: string[];
+    summary: string;
+    attempt: number;
+  };
 }
 export interface ReportRecord {
   date: string;

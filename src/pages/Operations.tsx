@@ -124,7 +124,7 @@ export function Models({ data }: { data: Snapshot }) {
       <section className="agent-section">
         <SectionHead
           title="模型角色"
-          subtitle="V3 规划角色 · Kimi 为现有流程的单模型"
+          subtitle="后端已支持角色路由 · DeepSeek Secret 配置后自动启用"
         />
         <div className="agent-row">
           <div className="agent-mark">
@@ -134,8 +134,8 @@ export function Models({ data }: { data: Snapshot }) {
             <h3>内容分析员</h3>
             <p>主题识别 · 中文摘要 · 论文语义初审</p>
           </div>
-          <strong>DeepSeek Worker</strong>
-          <Badge>待接入</Badge>
+          <strong>DeepSeek Flash</strong>
+          <Badge tone="green">后端已支持</Badge>
         </div>
         <div className="agent-row">
           <div className="agent-mark kimi">K</div>
@@ -144,7 +144,7 @@ export function Models({ data }: { data: Snapshot }) {
             <p>选题排序 · 总览编写 · 日报与周报成稿</p>
           </div>
           <strong>Kimi K2.6</strong>
-          <Badge tone="blue">现有流程</Badge>
+          <Badge tone="blue">主编</Badge>
         </div>
         <div className="agent-row">
           <div className="agent-mark">
@@ -154,8 +154,8 @@ export function Models({ data }: { data: Snapshot }) {
             <h3>独立审稿员</h3>
             <p>事实核对 · 完整性审校 · 质量评分</p>
           </div>
-          <strong>DeepSeek Reviewer</strong>
-          <Badge>待接入</Badge>
+          <strong>DeepSeek V4 Pro</strong>
+          <Badge tone="green">后端已支持</Badge>
         </div>
       </section>
       <section className="pipeline-section">
@@ -193,7 +193,6 @@ export function Models({ data }: { data: Snapshot }) {
           <SectionHead title="调用策略" />
           <NumberInput
             label="Worker 并发"
-            disabled
             value={config.models.workerConcurrency}
             min={1}
             max={8}
@@ -218,7 +217,6 @@ export function Models({ data }: { data: Snapshot }) {
           />
           <NumberInput
             label="审稿最低分"
-            disabled
             value={config.models.reviewerThreshold}
             min={70}
             max={100}
@@ -377,6 +375,17 @@ export function Runs({ data }: { data: Snapshot }) {
                       : "执行中"}
                 </Badge>
                 {q && !q.ok && <Badge tone="amber">摘要不完整</Badge>}
+                {report?.report.quality_review && (
+                  <Badge
+                    tone={
+                      report.report.quality_review.status === "passed"
+                        ? "green"
+                        : "red"
+                    }
+                  >
+                    审稿 {report.report.quality_review.score}
+                  </Badge>
+                )}
               </div>
               <button
                 className="row-arrow"

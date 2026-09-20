@@ -161,6 +161,8 @@ export async function mockGitHub(page: Page) {
           "daily",
           "notifications",
           "models.editorTimeout",
+          "models.workerConcurrency",
+          "models.reviewerThreshold",
         ],
         workflows: { generate: "daily.yml", notify: "push-feishu-once.yml" },
       });
