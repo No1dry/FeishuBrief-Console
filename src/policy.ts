@@ -135,7 +135,13 @@ export const defaultConfig: Config = {
       priority: "P0",
       weight: 1,
       keywords: ["world model", "world models"],
-      aliases: ["latent dynamics", "video world model", "predictive world"],
+      aliases: [
+        "latent dynamics",
+        "video world model",
+        "predictive world",
+        "world modeling",
+        "world modelling",
+      ],
       excludeKeywords: [],
     },
     {
@@ -202,9 +208,13 @@ export function matchTopics(article: Article, config: Config): Topic[] {
       topic.enabled &&
       topic.weight > 0 &&
       !topic.excludeKeywords.some((word) => includesKeyword(text, word)) &&
-      [...topic.keywords, ...topic.aliases].some((word) =>
-        includesKeyword(text, word),
-      ),
+      [
+        ...topic.keywords,
+        ...topic.aliases,
+        ...(topic.id === "world-model"
+          ? ["world modeling", "world modelling"]
+          : []),
+      ].some((word) => includesKeyword(text, word)),
   );
 }
 export function sourceEnabled(source: Source, config: Config): boolean {

@@ -7,6 +7,7 @@ import {
   configSchema,
   defaultConfig,
   includesKeyword,
+  matchTopics,
   previewPapers,
   reportQuality,
 } from "../src/policy";
@@ -33,6 +34,17 @@ test("configuration rejects secrets and insufficient message counts", () => {
   expect(
     includesKeyword("Multi-Agent reinforcement learning", "multi-agent"),
   ).toBe(true);
+  expect(
+    matchTopics(
+      {
+        sourceId: "fixture",
+        title: "World modeling across different environments",
+        url: "https://example.com/world-modeling",
+        category: "tech",
+      },
+      defaultConfig,
+    ).map((topic) => topic.id),
+  ).toContain("world-model");
 });
 
 test("historical paper preview deduplicates arXiv across platforms and honors source switches", () => {
