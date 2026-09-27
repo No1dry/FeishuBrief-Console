@@ -18,7 +18,6 @@ jobs:
     timeout-minutes: 15
     env:
       CI: 'true'
-      PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/playwright-browsers
     steps:
       - uses: actions/checkout@v4
         with:
@@ -30,8 +29,12 @@ jobs:
       - name: Install locked dependencies
         run: npm ci --no-audit --no-fund
       - name: Install matching Chromium and system libraries
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/playwright-browsers
         run: npx playwright install --with-deps chromium
       - name: Mocked browser tests and build with loopback networking only
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/playwright-browsers
         shell: bash
         run: |
           node_path="$(command -v node)"
