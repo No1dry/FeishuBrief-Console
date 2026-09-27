@@ -80,6 +80,7 @@ const brief = {
   importance: 5,
 };
 export const fixtureReport: DailyReport = {
+  edition: { date: "2026-09-14", revisionId: "a".repeat(64), contentHash: "a".repeat(64) },
   hero_headline: "测试日报",
   daily_overview: "这是一份用于工作台自动化测试的归档。",
   tech_briefs: [brief],
@@ -165,6 +166,7 @@ export async function mockGitHub(page: Page) {
           "models.reviewerThreshold",
         ],
         workflows: { generate: "daily.yml", notify: "push-feishu-once.yml" },
+        features: { topicProfiles: 1, topicRadar: 1, memberPreferences: false },
       });
     if (path.endsWith("/contents/sources.config.json"))
       return file(fixtureSources);
@@ -187,6 +189,10 @@ export async function mockGitHub(page: Page) {
       });
     if (path === "/repos/No1dry/daily-brief-site/contents")
       return json([{ name: "2026-09-14", type: "dir" }]);
+    if (path.endsWith("/history/2026-09-14.json")) {
+      expect(url.searchParams.get("ref")).toBe("digest-state");
+      return file({ articles: fixtureArticles });
+    }
     if (path.endsWith("/2026-09-14.json")) return file(state.report);
     if (path.endsWith("/2026-09-14-articles.json"))
       return file({ articles: fixtureArticles });

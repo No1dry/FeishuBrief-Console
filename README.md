@@ -6,6 +6,8 @@
 
 ## 登录
 
+本节说明原有管理员 GitHub 控制台登录；组内成员使用下方 Phase 4 的邮箱验证码入口，无需 GitHub Token。
+
 打开工作台，使用仅授权 `No1dry/FeishuBrief` 的细粒度 GitHub Token，选择：
 
 - Contents：Read and write，用于读取信源和提交编辑配置。
@@ -67,3 +69,36 @@ npm run deploy
 - `scripts/deploy-pages.mjs`：独立 Pages 发布。
 
 设计沿用 `frontend-design` 和 `hallmark` 的 Cobalt 工作台。字体在构建中自托管，图标使用 Lucide。
+
+## Phase 2 主题雷达
+
+管理员入口新增主题雷达；研究重点支持可配置收录范围、排除说明、正反例、子方向、相关性阈值、上限及删除主题。默认 VLA、WM、Agent、Robotics、RL 为可交叉研究维度，具身智能不再是独立默认主题。
+
+成员入口 `/app` 或 `#/app` 支持主次方向、个人关键词、排除词、子方向与有代码偏好，使用独立的认证 API。当前仓库不包含 Member Service；未部署时显示未开放，不能把模拟测试通过当成真实成员系统上线。见 [成员 API 契约](docs/member-radar-api.md)。
+
+## Phase 4 组内邀请登录
+
+独立的同级项目 [FeishuBrief-Member](https://github.com/No1dry/FeishuBrief-Member/blob/main/README.md) 已提供成员服务。Console `/app` 已实现邀请制邮箱登录（8 位验证码）、管理员发送邀请、成员角色和阅读权限管理、停用成员及版本冲突保护；原有主题雷达与个人关键词偏好继续通过同源 API 保存。账号包括管理员、主题负责人、普通成员和只读成员；服务端负责最终权限检查。
+
+本地启动、初始化首位管理员与登录步骤见 [Member Service 使用说明](https://github.com/No1dry/FeishuBrief-Member/blob/main/README.md)，HTTPS、SMTP、持久化数据库和同源代理配置见 [部署与运维](https://github.com/No1dry/FeishuBrief-Member/blob/main/docs/deployment.md)。本地 Vite 设置 `MEMBER_API_PROXY=1` 后可连接 `127.0.0.1:5190`；生产尚未部署，真实邮件投递尚未验收。单独发布 GitHub Pages 不会提供成员认证服务。
+
+Phase 4 提供登录、邀请、角色管理和雷达偏好；完整个人和管理闭环已在下述 Phase 5 实现。Phase 6 已增加验证绑定和个人通知入口，运行能力依赖 Member Service 的显式配置，默认关闭。现有群体完整简报及群推送保持原流程。
+
+## Phase 5 个人与管理闭环
+
+- 我的订阅：主次方向、子方向、关键词、排除词、类型、条数、比例、开源偏好、频率及暂停；首次引导和独立草稿预览。
+- 版本冲突保留草稿，读取最新版本后按字段确认合并。
+- 我的简报：服务端预览、明确确认的站内成版、最近 100 个版本和私人深链接；展示入选原因与证据。
+- 内容库与收藏：主题/类型/阅读状态筛选，已读、收藏、不相关及撤回；按当前权限和内容撤销过滤。
+- 管理：成员邀请和主题授权、主题增删改及负责人权限、导入批次和站内组装统计、邀请状态与审计。
+- 会话统一清理；后台和跨标签切换不保留旧账号内容；退出未确认时保持清空并支持重试。
+
+成员功能入口为 `/app`，旧群体管理入口为 `/admin`。保存、预览及站内成版均不会发送飞书或微信消息。Phase 6 的外部通知通过单独确认或已明确启用的个人计划执行。
+
+详见 [Phase 5 实现与验收说明](docs/phase5-implementation.md)。本地代码及浏览器联调完成；生产服务器、域名与真实 SMTP 仍需配置，尚未上线。
+
+## Phase 6 个人绑定与通知
+
+`/app/notifications` 提供飞书私聊一次性码、微信 PushPlus 好友二维码与验证码、解绑、上海时区的个人计划和固定版本通知。成员不填写平台接收 ID 或发送 Token。外部消息为更新提醒与本人登录后可读的版本链接。
+
+管理员 `/app/deliveries` 可查询平台结果、记录未知结果的人工核对和确认补发；补发固定原版本与接收目标，需填写原因并确认重复风险。界面将平台受理、平台确认、未知和已读区分。详见 [Phase 6 Console](docs/phase6-implementation.md) 及 [平台接入/部署](https://github.com/No1dry/FeishuBrief-Member/blob/main/docs/phase6-implementation.md)。

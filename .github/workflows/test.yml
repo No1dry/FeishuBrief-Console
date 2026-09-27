@@ -1,0 +1,53 @@
+name: Console offline tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: console-test-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      CI: 'true'
+      PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/playwright-browsers
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.21.0'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Install matching Chromium and system libraries
+        run: npx playwright install --with-deps chromium
+      - name: Mocked browser tests and build with loopback networking only
+        shell: bash
+        run: |
+          node_path="$(command -v node)"
+          node_bin="$(dirname "$node_path")"
+          # Fixtures intercept all GitHub and Member API calls. A separate network
+          # namespace adds a fail-closed boundary: no external routes exist while
+          # the local Vite server, browser tests, typecheck and build run.
+          sudo unshare --net bash -eu -c '
+            ip link set lo up
+            export CI=true
+            export MEMBER_API_PROXY=0
+            export PLAYWRIGHT_BROWSERS_PATH="$1"
+            export PATH="$2:$PATH"
+            unset CONSOLE_TEST_URL
+            "$3" node_modules/@playwright/test/cli.js test
+            npm run build
+          ' -- "$PLAYWRIGHT_BROWSERS_PATH" "$node_bin" "$node_path"
+      # No deployment, snapshot generation, live sibling service, model calls,
+      # SMTP/notification secrets, artifact upload or Pages publishing in this job.

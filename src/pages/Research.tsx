@@ -25,12 +25,14 @@ import {
 } from "../policy";
 import type { Article, Snapshot } from "../types";
 import { useWorkspace } from "../workspace";
+import { useRemote } from "../remote";
 
 const descriptions: Record<string, string> = {
   vla: "视觉、语言与动作的统一建模",
   agent: "智能体、工具调用与自主研究",
   "world-model": "世界表征、动态预测与交互仿真",
-  embodied: "机器人学习、感知与环境交互",
+  robotics: "机器人感知、控制、操作与真实系统",
+  "reinforcement-learning": "奖励驱动的策略学习与强化后训练",
 };
 export function KeywordList({
   label,
@@ -106,10 +108,13 @@ export default function Research({
   openPreview: () => void;
 }) {
   const { config, update } = useWorkspace();
+  const remote = useRemote();
+  const supportsProfiles = remote.session?.capabilities.features?.topicProfiles === 1;
   const [editing, setEditing] = useState<Topic | null>(null),
     [adding, setAdding] = useState(false),
     [filter, setFilter] = useState("all");
   const [modalError, setModalError] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
   const latest = data.reports[0];
   const matched = useMemo(
     () =>
@@ -152,19 +157,21 @@ export default function Research({
     setEditing(structuredClone(topic));
     setAdding(false);
     setModalError("");
+    setDeleteConfirm(false);
   };
   return (
     <>
       <header className="page-heading">
         <div>
           <h1>研究重点</h1>
-          <p>VLA、Agent、World Model，以及你接下来想探索的方向。</p>
+          <p>管理员维护共享主题。具身智能是上位概念；VLA、World Model、Agent、Robotics、强化学习可交叉标注。</p>
         </div>
         <div className="page-actions">
           <Button
             icon={Plus}
             onClick={() => {
               setAdding(true);
+              setDeleteConfirm(false);
               setEditing({
                 id: "",
                 name: "",
@@ -235,7 +242,7 @@ export default function Research({
                   <button className="topic-name" onClick={() => edit(topic)}>
                     {topic.name}
                   </button>
-                  <p>{descriptions[topic.id] ?? topic.keywords.join(" · ")}</p>
+                  <p>{topic.scope ?? descriptions[topic.id] ?? topic.keywords.join(" · ")}</p>
                   <div className="topic-keywords">
                     {topic.keywords.slice(0, 2).map((k) => (
                       <span key={k}>{k}</span>
@@ -467,12 +474,37 @@ export default function Research({
                 setEditing({ ...editing, excludeKeywords })
               }
             />
+            {supportsProfiles && <>
+              <label className="field">收录范围
+                <textarea aria-label="收录范围" maxLength={1200} value={editing.scope ?? ""} onChange={e => setEditing({ ...editing, scope: e.target.value || undefined })} />
+              </label>
+              <KeywordList label="排除说明" values={editing.exclusions ?? []} onChange={exclusions => setEditing({ ...editing, exclusions })} />
+              <KeywordList label="正例" values={editing.positiveExamples ?? []} onChange={positiveExamples => setEditing({ ...editing, positiveExamples })} />
+              <KeywordList label="反例" values={editing.negativeExamples ?? []} onChange={negativeExamples => setEditing({ ...editing, negativeExamples })} />
+              <label className="field">主题相关性门槛（70—100）
+                <input aria-label="主题相关性门槛" type="number" min={70} max={100} value={editing.relevanceThreshold ?? 70} onChange={e => setEditing({ ...editing, relevanceThreshold: Number(e.target.value) })} />
+              </label>
+              <label className="field">雷达展示上限（1—100）
+                <input aria-label="雷达展示上限" type="number" min={1} max={100} value={editing.radarLimit ?? 20} onChange={e => setEditing({ ...editing, radarLimit: Number(e.target.value) })} />
+              </label>
+              <fieldset className="radar-subtopics"><legend>子方向</legend>
+                {(editing.subtopics ?? []).map((sub, index) => <div className="radar-subtopic-edit" key={index}>
+                  <label className="field">子方向 ID<input aria-label={`子方向 ${index + 1} ID`} value={sub.id} onChange={e => setEditing({ ...editing, subtopics: editing.subtopics!.map((s, i) => i === index ? { ...s, id: e.target.value } : s) })} /></label>
+                  <label className="field">子方向名称<input aria-label={`子方向 ${index + 1} 名称`} value={sub.name} onChange={e => setEditing({ ...editing, subtopics: editing.subtopics!.map((s, i) => i === index ? { ...s, name: e.target.value } : s) })} /></label>
+                  <KeywordList label={`子方向 ${index + 1} 关键词`} values={sub.keywords} onChange={keywords => setEditing({ ...editing, subtopics: editing.subtopics!.map((s, i) => i === index ? { ...s, keywords } : s) })} />
+                  <Button onClick={() => setEditing({ ...editing, subtopics: editing.subtopics!.filter((_, i) => i !== index) })}>移除子方向 {index + 1}</Button>
+                </div>)}
+                <Button onClick={() => setEditing({ ...editing, subtopics: [...(editing.subtopics ?? []), { id: "", name: "", keywords: [] }] })}>新增子方向</Button>
+              </fieldset>
+              <p className="muted small">保存草稿后提交到后端，下次共享评估使用新主题版本。历史雷达保留原配置和证据。</p>
+            </>}
             {modalError && (
               <p role="alert" className="field-error">
                 {modalError}
               </p>
             )}
             <div className="modal-actions">
+              {!adding && <Button disabled={config.researchTopics.filter(t => t.enabled && t.weight > 0).length <= 1 && editing.enabled && editing.weight > 0} onClick={() => setDeleteConfirm(true)}>删除主题</Button>}
               <Button onClick={() => setEditing(null)}>取消</Button>
               <Button
                 variant="primary"
@@ -508,6 +540,13 @@ export default function Research({
                 保存主题
               </Button>
             </div>
+            {deleteConfirm && <div className="aside-note" role="alert">
+              <p>删除 {editing.name}？新批次不再评估此主题，历史雷达保持原版本。成员需要重新选择被删除的主方向。</p>
+              <Button onClick={() => setDeleteConfirm(false)}>保留主题</Button>
+              <Button onClick={() => {
+                if (update(draft => { draft.researchTopics = draft.researchTopics.filter(t => t.id !== editing.id); })) { setEditing(null); setDeleteConfirm(false); }
+              }}>确认删除主题</Button>
+            </div>}
           </div>
         </Modal>
       )}

@@ -1,0 +1,37 @@
+.member-personal { margin-top: 28px; min-width: 0; }
+.member-personal h3 { margin-block: 12px; }
+.member-personal-form { display: grid; gap: 22px; max-width: 920px; padding: 24px 0; }
+.member-personal-form legend { font-weight: 600; }
+.member-personal-form label, .member-personal-filters label { display: grid; gap: 8px; font-size: var(--text-sm); min-width: 0; }
+.member-personal input:not([type=checkbox]), .member-personal select, .member-personal textarea { min-width: 0; max-width: 100%; width: 100%; padding: 10px 12px; border: 1px solid var(--color-rule); border-radius: 6px; background: var(--color-paper, #fff); color: inherit; font: inherit; }
+.member-personal textarea { resize: vertical; }
+.member-personal-checks { display: flex; flex-wrap: wrap; gap: 12px 20px; }
+.member-personal-checks strong { width: 100%; font-size: var(--text-sm); }
+.member-personal-checks label { display: flex; align-items: center; gap: 8px; }
+.member-personal-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; }
+.member-personal-toolbar, .member-personal-feedback, .member-personal-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-block: 18px; }
+.member-personal-order { display: flex; align-items: center; justify-content: space-between; gap: 12px; max-width: 450px; margin-block: 8px; }
+.member-personal-onboarding, .member-personal-confirm, .member-personal-conflict { padding: 20px; margin-block: 20px; border: 1px solid var(--color-rule); border-radius: 10px; background: var(--color-paper, #fff); }
+.member-personal-onboarding ol { margin: 10px 0 0 22px; line-height: 1.8; }
+.member-personal-confirm .button { margin: 10px 10px 0 0; }
+.member-personal-table-wrap { overflow-x: auto; margin-block: 18px; }
+.member-personal table { border-collapse: collapse; width: 100%; font-size: var(--text-sm); }
+.member-personal th, .member-personal td { padding: 12px; text-align: left; border-bottom: 1px solid var(--color-rule); overflow-wrap: anywhere; }
+.member-personal th { font-weight: 600; }
+.member-personal-card { margin-block: 20px; padding: 22px 0; border-top: 1px solid var(--color-rule); overflow-wrap: anywhere; }
+.member-personal-card > p { margin-block: 12px; line-height: 1.7; }
+.member-personal-card details { margin-top: 14px; }
+.member-personal-card h3 { font-size: var(--text-lg); }
+.member-personal-reasons { font-size: var(--text-sm); }
+.member-personal-feedback button, .member-personal-link { padding: 8px 12px; border: 1px solid var(--color-rule); border-radius: 6px; background: transparent; color: inherit; cursor: pointer; font: inherit; font-size: var(--text-sm); }
+.member-personal-feedback button[aria-pressed=true] { color: var(--color-accent, #146be5); background: var(--color-accent-soft, #edf4ff); border-color: currentColor; }
+.member-personal-feedback button:disabled { cursor: default; opacity: .55; }
+.member-personal-brief-layout { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 28px; margin-top: 28px; }
+.member-personal-history { list-style: none; padding: 0; margin: 12px 0; }
+.member-personal-history button { width: 100%; padding: 14px 12px; text-align: left; display: grid; gap: 7px; border: 0; border-bottom: 1px solid var(--color-rule); color: inherit; background: transparent; cursor: pointer; font: inherit; }
+.member-personal-history button[aria-current=page] { background: var(--color-accent-soft, #edf4ff); }
+.member-personal-history span, .member-personal-history small { font-size: var(--text-xs); }
+.member-personal-version { font-size: var(--text-sm); font-weight: 600; }
+.member-personal-filters { display: grid; grid-template-columns: minmax(200px, 2fr) repeat(4, minmax(120px, 1fr)); gap: 14px; margin-block: 24px; }
+@media (max-width: 900px) { .member-personal-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } .member-personal-filters label:first-child { grid-column: 1 / -1; } }
+@media (max-width: 650px) { .member-personal-brief-layout { grid-template-columns: minmax(0, 1fr); } .member-personal-history { display: flex; overflow-x: auto; } .member-personal-history li { flex: 0 0 180px; } .member-personal-columns { grid-template-columns: minmax(0, 1fr); } .member-personal-onboarding, .member-personal-confirm, .member-personal-conflict { padding: 16px; } }

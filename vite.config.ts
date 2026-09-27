@@ -23,6 +23,9 @@ export default defineConfig({
     },
   ],
   base: "./",
-  server: { host: "127.0.0.1" },
+  server: {
+    host: "127.0.0.1",
+    ...(process.env.MEMBER_API_PROXY === "1" ? { proxy: { "/api/member": { target: "http://127.0.0.1:5190", changeOrigin: false } } } : {}),
+  },
   build: { chunkSizeWarningLimit: 650 },
 });

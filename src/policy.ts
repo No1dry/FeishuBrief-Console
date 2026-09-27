@@ -17,6 +17,14 @@ const topicSchema = z
     keywords: z.array(keyword).min(1).max(40),
     aliases: z.array(keyword).max(40),
     excludeKeywords: z.array(keyword).max(40),
+    scope: z.string().trim().min(1).max(1200).optional(),
+    exclusions: z.array(z.string().trim().min(1).max(300)).max(20).optional(),
+    positiveExamples: z.array(z.string().trim().min(1).max(300)).max(20).optional(),
+    negativeExamples: z.array(z.string().trim().min(1).max(300)).max(20).optional(),
+    subtopics: z.array(z.object({ id: z.string().regex(/^[a-z0-9-]+$/).max(60), name: z.string().trim().min(1).max(60), keywords: z.array(keyword).min(1).max(20) }).strict()).max(20).refine(items => new Set(items.map(t => t.id)).size === items.length, "子方向 ID 不能重复").optional(),
+    relevanceThreshold: z.number().int().min(70).max(100).optional(),
+    radarLimit: z.number().int().min(1).max(100).optional(),
+
   })
   .strict();
 const countsSchema = z
@@ -85,11 +93,12 @@ export const configSchema = z
         reviewMinimumScore: z.number().int().min(80).max(100),
       })
       .strict(),
+    personalBriefs: z.object({ enabled: z.boolean().default(false) }).strict().default({ enabled: false }),
     models: z
       .object({
         workerConcurrency: z.number().int().min(1).max(8),
         editorTimeout: z.number().int().min(120).max(600),
-        reviewerThreshold: z.number().int().min(70).max(100),
+        reviewerThreshold: z.number().int().min(80).max(100),
       })
       .strict(),
   })
@@ -102,59 +111,305 @@ export type Config = z.infer<typeof configSchema>;
 export type Topic = Config["researchTopics"][number];
 export const defaultConfig: Config = {
   schemaVersion: 3,
+  personalBriefs: { enabled: false },
   name: "AI Frontier",
   researchTopics: [
-    {
-      id: "vla",
-      name: "VLA",
-      enabled: true,
-      priority: "P0",
-      weight: 1.4,
-      keywords: ["VLA", "vision-language-action"],
-      aliases: [
-        "vision language action",
-        "robotic foundation model",
-        "visuomotor",
-      ],
-      excludeKeywords: [],
-    },
-    {
-      id: "agent",
-      name: "Agent",
-      enabled: true,
-      priority: "P0",
-      weight: 1.2,
-      keywords: ["agent", "agentic", "multi-agent"],
-      aliases: ["tool use", "computer use", "autonomous research"],
-      excludeKeywords: ["air combat", "eye clinic"],
-    },
-    {
-      id: "world-model",
-      name: "World Model",
-      enabled: true,
-      priority: "P0",
-      weight: 1,
-      keywords: ["world model", "world models"],
-      aliases: [
-        "latent dynamics",
-        "video world model",
-        "predictive world",
-        "world modeling",
-        "world modelling",
-      ],
-      excludeKeywords: [],
-    },
-    {
-      id: "embodied",
-      name: "具身智能",
-      enabled: true,
-      priority: "P1",
-      weight: 0.8,
-      keywords: ["具身智能", "embodied"],
-      aliases: ["robot learning", "robot policy", "机器人学习"],
-      excludeKeywords: [],
-    },
-  ],
+  {
+    "id": "vla",
+    "name": "VLA",
+    "enabled": true,
+    "priority": "P0",
+    "weight": 1.4,
+    "keywords": [
+      "VLA",
+      "vision-language-action"
+    ],
+    "aliases": [
+      "vision language action",
+      "robotic foundation model",
+      "视觉语言动作"
+    ],
+    "excludeKeywords": [],
+    "scope": "将视觉、语言和动作统一建模的策略、训练、评测及部署；可与机器人、世界模型和强化学习交叉。",
+    "exclusions": [
+      "仅视觉语言理解而不生成动作的 VLM 不归入本主题。",
+      "仅提到机器人或使用现成 VLA 且无研究贡献，不构成核心相关。"
+    ],
+    "positiveExamples": [
+      "结合视觉与语言指令生成机械臂动作的策略模型。"
+    ],
+    "negativeExamples": [
+      "通用图像问答 VLM，没有动作建模。"
+    ],
+    "subtopics": [
+      {
+        "id": "policy",
+        "name": "动作策略",
+        "keywords": [
+          "action policy",
+          "visuomotor"
+        ]
+      },
+      {
+        "id": "training",
+        "name": "训练与适配",
+        "keywords": [
+          "fine-tuning",
+          "post-training"
+        ]
+      },
+      {
+        "id": "evaluation",
+        "name": "评测与部署",
+        "keywords": [
+          "benchmark",
+          "deployment"
+        ]
+      }
+    ],
+    "relevanceThreshold": 70,
+    "radarLimit": 20
+  },
+  {
+    "id": "world-model",
+    "name": "World Model",
+    "enabled": true,
+    "priority": "P0",
+    "weight": 1,
+    "keywords": [
+      "world model",
+      "world models"
+    ],
+    "aliases": [
+      "latent dynamics",
+      "video world model",
+      "predictive world",
+      "world modeling",
+      "world modelling",
+      "世界模型"
+    ],
+    "excludeKeywords": [],
+    "scope": "学习环境状态转移、动力学或可用于预测与规划的世界表征；覆盖机器人及非机器人环境。",
+    "exclusions": [
+      "普通视频生成只有在环境动态、可交互仿真或规划贡献明确时纳入。",
+      "标题中的 model 不表示 world model。"
+    ],
+    "positiveExamples": [
+      "学习潜在环境动力学并用于长时规划。"
+    ],
+    "negativeExamples": [
+      "纯视频美化与插帧，没有环境动态或规划贡献。"
+    ],
+    "subtopics": [
+      {
+        "id": "dynamics",
+        "name": "动力学与表征",
+        "keywords": [
+          "latent dynamics",
+          "representation"
+        ]
+      },
+      {
+        "id": "planning",
+        "name": "预测与规划",
+        "keywords": [
+          "planning",
+          "prediction"
+        ]
+      },
+      {
+        "id": "simulation",
+        "name": "交互仿真",
+        "keywords": [
+          "simulation",
+          "interactive"
+        ]
+      }
+    ],
+    "relevanceThreshold": 70,
+    "radarLimit": 20
+  },
+  {
+    "id": "agent",
+    "name": "Agent",
+    "enabled": true,
+    "priority": "P0",
+    "weight": 1.2,
+    "keywords": [
+      "agent",
+      "agentic",
+      "multi-agent"
+    ],
+    "aliases": [
+      "tool use",
+      "computer use",
+      "autonomous research",
+      "tool calling",
+      "智能体"
+    ],
+    "excludeKeywords": [],
+    "scope": "自主任务规划、工具使用、记忆、多智能体协作、评测与可靠性；可用于软件或物理环境。",
+    "exclusions": [
+      "仅在垂直应用中使用 agent 一词，且无可迁移的智能体方法贡献时降低相关性。",
+      "强化学习中的 agent 并不自动归为 LLM Agent。"
+    ],
+    "positiveExamples": [
+      "评测工具调用与长期记忆对自主研究智能体的作用。"
+    ],
+    "negativeExamples": [
+      "市场代理人统计分析，没有智能体算法或系统贡献。"
+    ],
+    "subtopics": [
+      {
+        "id": "tools",
+        "name": "工具与交互",
+        "keywords": [
+          "tool use",
+          "computer use"
+        ]
+      },
+      {
+        "id": "memory",
+        "name": "记忆与规划",
+        "keywords": [
+          "memory",
+          "planning"
+        ]
+      },
+      {
+        "id": "multi-agent",
+        "name": "多智能体",
+        "keywords": [
+          "multi-agent",
+          "coordination"
+        ]
+      }
+    ],
+    "relevanceThreshold": 70,
+    "radarLimit": 20
+  },
+  {
+    "id": "robotics",
+    "name": "Robotics",
+    "enabled": true,
+    "priority": "P1",
+    "weight": 1,
+    "keywords": [
+      "robotics",
+      "robot"
+    ],
+    "aliases": [
+      "robot learning",
+      "robot policy",
+      "robotic manipulation",
+      "locomotion",
+      "visuomotor",
+      "机器人",
+      "机器人学习"
+    ],
+    "excludeKeywords": [],
+    "scope": "机器人感知、控制、运动、操作、硬件与真实系统评测；VLA、世界模型、强化学习只有对机器人有明确贡献时交叉标注。",
+    "exclusions": [
+      "纯软件聊天机器人不纳入。",
+      "仅以具身智能作愿景、没有机器人研究或系统证据时不纳入。"
+    ],
+    "positiveExamples": [
+      "真实四足机器人在复杂地形中的运动控制与评测。"
+    ],
+    "negativeExamples": [
+      "名为 robot 的客服聊天应用。"
+    ],
+    "subtopics": [
+      {
+        "id": "manipulation",
+        "name": "操作",
+        "keywords": [
+          "manipulation",
+          "grasping"
+        ]
+      },
+      {
+        "id": "locomotion",
+        "name": "运动控制",
+        "keywords": [
+          "locomotion",
+          "control"
+        ]
+      },
+      {
+        "id": "systems",
+        "name": "感知与系统",
+        "keywords": [
+          "perception",
+          "hardware",
+          "sim-to-real"
+        ]
+      }
+    ],
+    "relevanceThreshold": 70,
+    "radarLimit": 20
+  },
+  {
+    "id": "reinforcement-learning",
+    "name": "Reinforcement Learning",
+    "enabled": true,
+    "priority": "P1",
+    "weight": 1,
+    "keywords": [
+      "reinforcement learning"
+    ],
+    "aliases": [
+      "RL",
+      "RLHF",
+      "reinforcement fine-tuning",
+      "policy optimization",
+      "reward learning",
+      "强化学习",
+      "强化微调"
+    ],
+    "excludeKeywords": [],
+    "scope": "通过奖励与环境交互进行策略学习，含离线/在线 RL、奖励建模及语言模型强化后训练；不限于机器人。",
+    "exclusions": [
+      "仅使用 reward、agent 等通用词并不能证明强化学习贡献。",
+      "监督学习、模仿学习无强化优化环节时不纳入。"
+    ],
+    "positiveExamples": [
+      "通过环境奖励优化机器人策略或语言模型推理策略。"
+    ],
+    "negativeExamples": [
+      "只用标注动作做监督模仿学习，没有奖励优化。"
+    ],
+    "subtopics": [
+      {
+        "id": "policy",
+        "name": "策略优化",
+        "keywords": [
+          "policy optimization",
+          "actor critic"
+        ]
+      },
+      {
+        "id": "offline",
+        "name": "离线强化学习",
+        "keywords": [
+          "offline RL",
+          "offline reinforcement learning"
+        ]
+      },
+      {
+        "id": "post-training",
+        "name": "强化后训练",
+        "keywords": [
+          "RLHF",
+          "reasoning",
+          "post-training"
+        ]
+      }
+    ],
+    "relevanceThreshold": 70,
+    "radarLimit": 20
+  }
+],
   papers: {
     minimumScore: 52,
     dailyMaximum: 20,

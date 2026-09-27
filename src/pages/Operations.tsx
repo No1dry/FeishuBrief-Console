@@ -218,7 +218,7 @@ export function Models({ data }: { data: Snapshot }) {
           <NumberInput
             label="审稿最低分"
             value={config.models.reviewerThreshold}
-            min={70}
+            min={80}
             max={100}
             onChange={(n) =>
               update((d) => {

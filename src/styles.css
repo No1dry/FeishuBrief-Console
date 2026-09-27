@@ -7,6 +7,30 @@
 * {
   box-sizing: border-box;
 }
+.radar-layout { display: grid; gap: 24px; align-items: start; }
+.radar-layout:has(.radar-preferences) { grid-template-columns: minmax(230px, 300px) minmax(0, 1fr); }
+.radar-card, .radar-preferences, .radar-diagnostics { border: 1px solid var(--color-rule); border-radius: 12px; padding: 20px; margin: 16px 0; background: var(--color-paper); min-width: 0; }
+.radar-card h2 { font-size: 18px; line-height: 1.5; margin: 12px 0; }
+.radar-card h2 a { white-space: normal; }
+.radar-tags, .radar-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.radar-card p, .radar-diagnostics li, .radar-evidence blockquote { overflow-wrap: anywhere; }
+.radar-evidence { margin-top: 16px; }
+.radar-evidence blockquote { border-left: 3px solid var(--color-accent); margin: 8px 0; padding: 8px 14px; font-size: 13px; }
+.radar-checks { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 14px 0; }
+.radar-checks strong { flex-basis: 100%; font-size: 13px; }
+.radar-checks label { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.radar-preferences { margin-top: 0; }
+.radar-preferences .field { margin: 16px 0; }
+.radar-preferences legend, .radar-subtopics legend { font-weight: 600; }
+.radar-subtopics { border: 1px solid var(--color-rule); padding: 12px; min-width: 0; }
+.radar-subtopic-edit { border-bottom: 1px solid var(--color-rule); padding-bottom: 12px; margin-bottom: 12px; }
+.member-shell { max-width: 1240px; margin: 0 auto; padding: 32px; }
+.member-form { padding: 0; margin: 0; border: 0; min-width: 0; }
+@media (max-width: 760px) {
+  .radar-layout:has(.radar-preferences) { grid-template-columns: minmax(0, 1fr); }
+  .member-shell { padding: 16px; }
+  .radar-card { padding: 14px; }
+}
 html,
 body {
   margin: 0;
@@ -2985,4 +3009,21 @@ input[type="number"]::-webkit-outer-spin-button {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* The member surface owns its forms and never loads the GitHub credential UI. */
+.member-login { max-width: 480px; margin: 48px auto; padding: 28px; border: 1px solid var(--color-rule); border-radius: 12px; }
+.member-login h2, .member-invite h3 { margin-bottom: 12px; }
+.member-login > p { margin-bottom: 20px; }
+.member-auth-fields { display: grid; gap: 16px; min-width: 0; }
+.member-auth-fields label { display: grid; gap: 7px; font-size: var(--text-sm); }
+.member-auth-fields input, .member-auth-fields select { width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid var(--color-rule); border-radius: 6px; background: var(--color-paper, #fff); color: inherit; font: inherit; }
+.member-admin { margin-top: 28px; }
+.member-invite { max-width: 640px; padding: 24px 0; }
+.member-management-row { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(250px, 2fr); gap: 28px; padding: 24px 0; border-top: 1px solid var(--color-rule); }
+.member-management-row p { overflow-wrap: anywhere; margin: 6px 0 12px; }
+.member-management-row .page-actions, .member-login .page-actions { flex-wrap: wrap; }
+@media (max-width: 600px) {
+  .member-login { margin: 24px auto; padding: 20px; }
+  .member-management-row { grid-template-columns: minmax(0, 1fr); gap: 16px; }
 }

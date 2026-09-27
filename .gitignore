@@ -6,3 +6,11 @@ playwright-report/
 !.env.example
 .DS_Store
 *.tsbuildinfo
+
+# Local design/process metadata and runtime output are not release inputs.
+.hallmark/
+logs/
+*.log
+[Ll][Oo][Gg].[Mm][Dd]
+过程/
+*.env

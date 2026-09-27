@@ -1,5 +1,6 @@
 import { configSchema, diffConfig, reportQuality, type Config } from "./policy";
 import type { ReportRecord, Snapshot, Source } from "./types";
+import { RadarSchema } from "./radar-contract";
 
 export const BACKEND_REPOSITORY = "No1dry/FeishuBrief";
 export const REPORT_REPOSITORY = "No1dry/daily-brief-site";
@@ -13,6 +14,7 @@ export interface Capabilities {
   version: number;
   supportedConfigPaths: string[];
   workflows: { generate: string; notify: string };
+  features?: { topicProfiles?: number; topicRadar?: number; memberPreferences?: boolean };
 }
 export interface GitHubSession {
   login: string;
@@ -46,7 +48,12 @@ export function unsupportedChanges(
   after: Config,
   capabilities: Capabilities,
 ): string[] {
-  return diffConfig(before, after)
+  const changes = diffConfig(before, after);
+  const topicFields = ["scope", "exclusions", "positiveExamples", "negativeExamples", "subtopics", "relevanceThreshold", "radarLimit"];
+  const extended = capabilities.features?.topicProfiles !== 1 ? changes.filter(change =>
+    change.path.startsWith("researchTopics.") && (topicFields.some(f => change.path.endsWith(`.${f}`)) ||
+      (change.before === "未设置" && topicFields.some(f => change.after.includes(`\"${f}\"`))))) : [];
+  return [...new Set([...extended.map(c => c.path), ...changes
     .filter(
       (change) =>
         !capabilities.supportedConfigPaths.some(
@@ -54,7 +61,7 @@ export function unsupportedChanges(
             change.path === prefix || change.path.startsWith(`${prefix}.`),
         ),
     )
-    .map((change) => change.path);
+    .map((change) => change.path)])];
 }
 
 export class GitHubClient {
@@ -118,11 +125,14 @@ export class GitHubClient {
     path: string,
     ref = "main",
   ): Promise<{ value: unknown; sha: string }> {
-    const file = await this.#request<{
+    let file = await this.#request<{
       content: string;
       encoding: string;
       sha: string;
     }>(`/repos/${repository}/contents/${path}?ref=${encodeURIComponent(ref)}`);
+    if (file.encoding === "none" && file.sha) {
+      file = await this.#request<{ content: string; encoding: string; sha: string }>(`/repos/${repository}/git/blobs/${file.sha}`);
+    }
     if (file.encoding !== "base64" || !file.content)
       throw new Error(`无法读取 ${path} 的完整内容。`);
     return { value: decodeContent(file.content), sha: file.sha };
@@ -130,6 +140,31 @@ export class GitHubClient {
   async readConfig(): Promise<RemoteConfig> {
     const file = await this.#file(BACKEND_REPOSITORY, CONFIG_PATH);
     return { config: configSchema.parse(file.value), sha: file.sha };
+  }
+  async readRadar(date?: string) {
+    if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("雷达日期无效");
+    // Pin all reads, including revocations, to a single private-state commit.
+    const ref = await this.#request<{ object: { sha: string } }>(`/repos/${BACKEND_REPOSITORY}/git/ref/heads/digest-state`);
+    const commit = ref.object.sha;
+    if (!/^[a-f0-9]{40}$/.test(commit)) throw new Error("私有状态版本无效");
+    const listing = await this.#request<{ name: string; type: string }[]>(`/repos/${BACKEND_REPOSITORY}/contents/radar-current?ref=${commit}`);
+    const dates = listing.filter(e => e.type === "file" && /^\d{4}-\d{2}-\d{2}\.json$/.test(e.name)).map(e => e.name.slice(0, 10)).sort().reverse();
+    const selected = date || dates[0];
+    if (!selected) throw new Error("尚无主题雷达，请先完成共享内容加工。");
+    const pointer = (await this.#file(BACKEND_REPOSITORY, `radar-current/${selected}.json`, commit)).value as { radarId: string; batchId: string; reportDate: string };
+    if (!/^[a-f0-9]{64}$/.test(pointer.radarId || "")) throw new Error("雷达指针无效");
+    const radar = RadarSchema.parse((await this.#file(BACKEND_REPOSITORY, `radars/${pointer.radarId}.json`, commit)).value);
+    if (radar.radarId !== pointer.radarId || radar.batchId !== pointer.batchId || radar.reportDate !== selected || pointer.reportDate !== selected) throw new Error("雷达版本不一致");
+    const canonical = (value: unknown): string => Array.isArray(value) ? `[${value.map(canonical).join(",")}]` : value && typeof value === "object" ? `{${Object.entries(value).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0).map(([k, v]) => `${JSON.stringify(k)}:${canonical(v)}`).join(",")}}` : JSON.stringify(value);
+    const { radarId, ...body } = radar;
+    const digest = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(canonical(body))))).map(b => b.toString(16).padStart(2, "0")).join("");
+    if (digest !== radarId) throw new Error("雷达内容哈希不一致");
+    const revoked = await this.#request<{ name: string; type: string }[]>(`/repos/${BACKEND_REPOSITORY}/contents/revocations?ref=${commit}`).catch(error => {
+      if (error instanceof GitHubError && error.status === 404) return [];
+      throw error;
+    });
+    const revokedRevisionIds = new Set(revoked.filter(e => e.type === "file" && /^[a-f0-9]{64}\.json$/.test(e.name)).map(e => e.name.slice(0, -5)));
+    return { radar, dates, commit, revokedRevisionIds };
   }
   async connect(): Promise<GitHubSession> {
     const [user, repo, remote, caps] = await Promise.all([
@@ -231,10 +266,13 @@ export class GitHubClient {
           const [report, articles] = await Promise.all([
             this.#file(REPORT_REPOSITORY, `${date}/${date}.json`, "gh-pages"),
             this.#file(
-              REPORT_REPOSITORY,
-              `${date}/${date}-articles.json`,
-              "gh-pages",
-            ),
+              BACKEND_REPOSITORY,
+              `history/${date}.json`,
+              "digest-state",
+            ).catch(error => {
+              if (!(error instanceof GitHubError) || error.status !== 404) throw error;
+              return this.#file(REPORT_REPOSITORY, `${date}/${date}-articles.json`, "gh-pages");
+            }),
           ]);
           const sidecar = articles.value as {
             articles: ReportRecord["articles"];
@@ -324,6 +362,14 @@ export class GitHubClient {
       throw new Error("该期日报未通过消息完整性检查，不能推送。");
     if (!channels.feishu && !channels.pushplus)
       throw new Error("至少选择一个推送渠道。");
+    const revision = report.report.edition?.revisionId;
+    if (!revision || !/^[a-f0-9]{64}$/.test(revision))
+      throw new Error("该报告缺少不可变版本，请先用新版内容引擎生成并发布。");
+    if (report.report.edition?.date !== report.date)
+      throw new Error("报告日期与版本不一致，不能推送。");
+    const review = report.report.quality_review;
+    if (review?.status !== "passed" || review.score < 80 || review.blockingIssues.length)
+      throw new Error("该报告未通过审稿，不能推送。");
     await this.#request(
       `/repos/${BACKEND_REPOSITORY}/actions/workflows/push-feishu-once.yml/dispatches`,
       "POST",
@@ -331,6 +377,7 @@ export class GitHubClient {
         ref: "main",
         inputs: {
           report_date: report.date,
+          report_revision: revision,
           chat_id: "",
           send_feishu: channels.feishu,
           send_pushplus: channels.pushplus,

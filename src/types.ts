@@ -37,6 +37,7 @@ export interface Brief {
   importance?: number;
 }
 export interface DailyReport {
+  edition?: { date: string; revisionId: string; contentHash: string };
   hero_headline: string;
   daily_overview: string;
   tech_briefs: Brief[];
@@ -85,6 +86,7 @@ export interface Snapshot {
 export type PageId =
   | "overview"
   | "research"
+  | "radar"
   | "sources"
   | "papers"
   | "reports"

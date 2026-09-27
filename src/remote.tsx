@@ -1,6 +1,7 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useRef,
   useState,
   type ReactNode,
@@ -19,6 +20,11 @@ function useRemoteState() {
     [lastCommit, setLastCommit] = useState("");
   const client = useRef<GitHubClient | null>(null),
     generation = useRef(0);
+  useEffect(() => () => {
+    generation.current++;
+    client.current?.disconnect();
+    client.current = null;
+  }, []);
   const disconnect = () => {
     generation.current++;
     client.current?.disconnect();

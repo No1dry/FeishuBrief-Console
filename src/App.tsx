@@ -46,6 +46,7 @@ import { useRemote } from "./remote";
 import { ConnectionGate, PublishDialog } from "./Connection";
 const Overview = lazy(() => import("./pages/Overview"));
 const Research = lazy(() => import("./pages/Research"));
+const Radar = lazy(() => import("./pages/Radar"));
 const Sources = lazy(() => import("./pages/Sources"));
 const Papers = lazy(() => import("./pages/Papers"));
 const Reports = lazy(() => import("./pages/Reports"));
@@ -72,6 +73,7 @@ const navigation: {
   group: string;
 }[] = [
   { id: "overview", name: "情报总览", icon: LayoutDashboard, group: "工作区" },
+  { id: "radar", name: "主题雷达", icon: BookOpen, group: "工作区" },
   {
     id: "research",
     name: "研究重点",
@@ -359,6 +361,7 @@ export default function App() {
     if (!data) return null;
     if (page === "overview")
       return <Overview data={data} navigate={navigate} inspect={setArticle} />;
+    if (page === "radar") return <Radar />;
     if (page === "research")
       return (
         <Research

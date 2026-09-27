@@ -1,5 +1,24 @@
 import { test, expect } from "@playwright/test";
 import { connect, mockGitHub, open, TEST_TOKEN } from "./github-fixture";
+import { GitHubClient } from "../src/github";
+import { fixtureReport } from "./github-fixture";
+
+test("notification dispatch pins an immutable report and rejects legacy reports", async () => {
+  const requests: unknown[] = [];
+  const client = new GitHubClient(TEST_TOKEN, async (_url, init) => {
+    requests.push(JSON.parse(String(init?.body)));
+    return new Response(null, { status: 204 });
+  });
+  const brief = fixtureReport.tech_briefs[0];
+  const report = { ...structuredClone(fixtureReport), tech_briefs: [brief, brief, brief], finance_briefs: [brief, brief, brief], politics_briefs: [brief, brief], keywords: ["a", "b", "c", "d", "e"], editor_note: "fixture note" };
+  report.quality_review = { status: "passed", reviewer: "fixture", score: 90, blockingIssues: [], suggestions: [], summary: "fixture", attempt: 1 };
+  const record = { date: "2026-09-14", report, articles: [], url: "https://example.com/report" };
+  await client.notify(record, { feishu: true, pushplus: false });
+  expect(requests).toEqual([{ ref: "main", inputs: { report_date: record.date, report_revision: "a".repeat(64), chat_id: "", send_feishu: true, send_pushplus: false } }]);
+  delete report.edition;
+  await expect(client.notify(record, { feishu: true, pushplus: false })).rejects.toThrow("缺少不可变版本");
+  expect(requests).toHaveLength(1);
+});
 
 test("a connection is ephemeral and never persists the token", async ({
   page,
