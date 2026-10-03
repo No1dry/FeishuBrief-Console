@@ -380,10 +380,13 @@ export function Runs({ data }: { data: Snapshot }) {
                     tone={
                       report.report.quality_review.status === "passed"
                         ? "green"
-                        : "red"
+                        : report.report.quality_review.publicationDecision === "best_effort"
+                          ? "amber"
+                          : "red"
                     }
                   >
                     审稿 {report.report.quality_review.score}
+                    {report.report.quality_review.publicationDecision === "best_effort" && " · 最佳版本已发布"}
                   </Badge>
                 )}
               </div>

@@ -37,6 +37,7 @@ export interface Brief {
   importance?: number;
 }
 export interface DailyReport {
+  documentType?: "public-report-projection";
   edition?: { date: string; revisionId: string; contentHash: string };
   hero_headline: string;
   daily_overview: string;
@@ -48,12 +49,15 @@ export interface DailyReport {
   trading?: { market_overview?: string };
   quality_review?: {
     status: "passed" | "failed";
-    reviewer: string;
+    reviewer?: string;
     score: number;
-    blockingIssues: string[];
-    suggestions: string[];
-    summary: string;
+    blockingIssues?: string[];
+    suggestions?: string[];
+    summary?: string;
     attempt: number;
+    maxAttempts?: number;
+    exhausted?: boolean;
+    publicationDecision?: "best_effort";
   };
 }
 export interface ReportRecord {

@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { connect, mockGitHub, open, TEST_TOKEN } from "./github-fixture";
 import { GitHubClient } from "../src/github";
 import { fixtureReport } from "./github-fixture";
+import type { DailyReport, ReportRecord } from "../src/types";
 
 test("notification dispatch pins an immutable report and rejects legacy reports", async () => {
   const requests: unknown[] = [];
@@ -18,6 +19,61 @@ test("notification dispatch pins an immutable report and rejects legacy reports"
   delete report.edition;
   await expect(client.notify(record, { feishu: true, pushplus: false })).rejects.toThrow("缺少不可变版本");
   expect(requests).toHaveLength(1);
+});
+
+test("notification accepts published review projections and rejects invalid or unapproved reviews", async () => {
+  const requests: unknown[] = [];
+  const client = new GitHubClient(TEST_TOKEN, async (_url, init) => {
+    requests.push(JSON.parse(String(init?.body)));
+    return new Response(null, { status: 204 });
+  });
+  const brief = fixtureReport.tech_briefs[0];
+  const report: DailyReport = {
+    ...structuredClone(fixtureReport), documentType: "public-report-projection",
+    tech_briefs: [brief, brief, brief], finance_briefs: [brief, brief, brief], politics_briefs: [brief, brief],
+    keywords: ["a", "b", "c", "d", "e"], editor_note: "Synthetic fixture note",
+    quality_review: { status: "passed", score: 90, attempt: 1, maxAttempts: 4, exhausted: false },
+  };
+  const record: ReportRecord = { date: "2026-09-14", report, articles: [], url: "https://example.com/report" };
+  await client.notify(record, { feishu: true, pushplus: false });
+  const bestEffort = { status: "failed", score: 78, attempt: 1, maxAttempts: 4, exhausted: true, publicationDecision: "best_effort" } as const;
+  report.quality_review = { ...bestEffort };
+  await client.notify(record, { feishu: false, pushplus: true });
+  expect(report.quality_review.status).toBe("failed");
+  expect(requests).toHaveLength(2);
+  expect(requests[1]).toEqual({ ref: "main", inputs: {
+    report_date: record.date, report_revision: "a".repeat(64), chat_id: "", send_feishu: false, send_pushplus: true,
+  } });
+
+  const invalidReviews = [
+    { status: "failed", score: 78, attempt: 1, blockingIssues: [] },
+    { status: "passed", score: 90, attempt: 1, blockingIssues: ["Synthetic unresolved blocker"] },
+    { ...bestEffort, publicationDecision: undefined },
+    { ...bestEffort, exhausted: false },
+    { ...bestEffort, exhausted: "true" },
+    { ...bestEffort, maxAttempts: undefined },
+    { ...bestEffort, maxAttempts: 7 },
+    { ...bestEffort, attempt: 5 },
+    { ...bestEffort, attempt: 0 },
+    { ...bestEffort, attempt: 1.5 },
+    { ...bestEffort, score: "78" },
+    { ...bestEffort, score: Number.NaN },
+    { ...bestEffort, score: 101 },
+    { ...bestEffort, score: -1 },
+    { ...bestEffort, status: "unknown" },
+    { ...bestEffort, blockingIssues: "not-an-array" },
+    { ...bestEffort, blockingIssues: [null] },
+    { status: "passed", score: 79, attempt: 1 },
+    { status: "passed", score: 90, attempt: 1, publicationDecision: "best_effort" },
+  ];
+  for (const review of invalidReviews) {
+    report.quality_review = review as unknown as DailyReport["quality_review"];
+    await expect(client.notify(record, { feishu: true, pushplus: false })).rejects.toThrow("不能推送");
+  }
+  delete report.documentType;
+  report.quality_review = { status: "passed", score: 90, attempt: 1 };
+  await expect(client.notify(record, { feishu: true, pushplus: false })).rejects.toThrow("不能推送");
+  expect(requests).toHaveLength(2);
 });
 
 test("a connection is ephemeral and never persists the token", async ({

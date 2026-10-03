@@ -43,6 +43,29 @@ function decodeContent(value: string): unknown {
     ),
   );
 }
+
+/** Public review metadata is a dispatch precheck only. The workflow revalidates
+ * the immutable private edition, its review history, and publication state. */
+function reviewAllowsNotification(report: ReportRecord["report"]): boolean {
+  const review = report.quality_review;
+  if (!review || typeof review !== "object" || Array.isArray(review)) return false;
+  if (typeof review.score !== "number" || !Number.isFinite(review.score) || review.score < 0 || review.score > 100)
+    return false;
+  if (!Number.isInteger(review.attempt) || review.attempt < 1 || review.attempt > 6) return false;
+  const validLimit = Number.isInteger(review.maxAttempts) && review.maxAttempts! >= 2 && review.maxAttempts! <= 6 && review.attempt <= review.maxAttempts!;
+  if (review.maxAttempts !== undefined && !validLimit) return false;
+  if (review.exhausted !== undefined && typeof review.exhausted !== "boolean") return false;
+  if (review.publicationDecision !== undefined && review.publicationDecision !== "best_effort") return false;
+  if (review.blockingIssues !== undefined && (!Array.isArray(review.blockingIssues) || !review.blockingIssues.every(issue => typeof issue === "string" && issue.trim())))
+    return false;
+  const projection = report.documentType === "public-report-projection";
+  // Legacy full reports must still supply their blocker list; public projections
+  // deliberately omit private review findings and evidence.
+  if (!projection && review.blockingIssues === undefined) return false;
+  if (review.status === "passed")
+    return review.publicationDecision === undefined && review.score >= 80 && (review.blockingIssues?.length ?? 0) === 0;
+  return review.status === "failed" && review.publicationDecision === "best_effort" && review.exhausted === true && validLimit;
+}
 export function unsupportedChanges(
   before: Config,
   after: Config,
@@ -367,9 +390,8 @@ export class GitHubClient {
       throw new Error("该报告缺少不可变版本，请先用新版内容引擎生成并发布。");
     if (report.report.edition?.date !== report.date)
       throw new Error("报告日期与版本不一致，不能推送。");
-    const review = report.report.quality_review;
-    if (review?.status !== "passed" || review.score < 80 || review.blockingIssues.length)
-      throw new Error("该报告未通过审稿，不能推送。");
+    if (!reviewAllowsNotification(report.report))
+      throw new Error("该报告没有有效的审稿通过或最佳版本发布记录，不能推送。");
     await this.#request(
       `/repos/${BACKEND_REPOSITORY}/actions/workflows/push-feishu-once.yml/dispatches`,
       "POST",
